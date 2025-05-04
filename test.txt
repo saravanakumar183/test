@@ -1,78 +1,128 @@
 @Test
-    void testDeleteUser_Success() throws UserException {
-        User user = new User();
-        user.setUserId("1");
-        user.setName("John Doe");
+public void testAddUser_Success() throws UserException {
+    // Arrange
+    UseruserDto userDto = new UseruserDto();
+    userDto.setName("John Doe");
+    userDto.setEmail("john.doe@example.com");
+    userDto.setPassword("password123");
+    userDto.setContactNumber("1234567890");
+    userDto.setAge(25);
+    userDto.setGender("Male");
 
-        when(userRepo.findById("1")).thenReturn(Optional.of(user));
-        doNothing().when(userRepo).deleteById("1");
+    User user = new User();
+    user.setUserId("user1");
+    user.setName(userDto.getName());
+    user.setEmail(userDto.getEmail());
+    user.setPassword(userDto.getPassword());
+    user.setContactNumber(userDto.getContactNumber());
+    user.setAge(userDto.getAge());
+    user.setGender(userDto.getGender());
 
-        String result = userService.deleteUser("1");
+    when(userRepo.findAll()).thenReturn(new ArrayList<>()); // No existing users
+    when(userRepo.save(any(User.class))).thenReturn(user);
+    
+    // Act
+    UseruserDto result = userService.addUser(userDto);
 
-        assertNotNull(result);
-        assertEquals("Deleted the user with userid : " + user.getUserId(), result);
-        verify(userRepo, times(1)).deleteById("1");
-    }
+    // Assert
+    assertNotNull(result);
+    assertEquals(userDto.getName(), result.getName());
+    assertEquals(userDto.getEmail(), result.getEmail());
+}
 
-    @Test
-    public void testAddUser() {
-        UseruserDto userDto = UseruserDto.builder()
-                .age(25)
-                .contactNumber("9876543210")
-                .email("test@example.com")
-                .gender("Male")
-                .name("Test User")
-                .password("password")
-                .build();
+@Test(expected = UserException.class)
+public void testAddUser_EmailAlreadyExists() throws UserException {
+    // Arrange
+    UseruserDto userDto = new UseruserDto();
+    userDto.setEmail("existing.email@example.com");
 
-        Attendee attendee = new Attendee();
-        attendee.setUser(new User());
+    User existingUser = new User();
+    existingUser.setEmail("existing.email@example.com");
 
-        when(attendeeRepo.save(any(Attendee.class))).thenReturn(attendee);
-        
-        UseruserDto result = userService.addUser(userDto);
-        assertNotNull(result);
-    }
+    when(userRepo.findAll()).thenReturn(Collections.singletonList(existingUser)); // Existing user
 
-    @Test
-    void testLogin_Success() throws UserException {
-        User user = new User();
-        user.setUserId("1");
-        user.setName("username");
-        user.setPassword("password");
+    // Act
+    userService.addUser(userDto); // This should throw exception
+}
 
-        when(userRepo.findAll()).thenReturn(List.of(user));
+@Test(expected = UserException.class)
+public void testAddUser_ContactNumberAlreadyExists() throws UserException {
+    // Arrange
+    UseruserDto userDto = new UseruserDto();
+    userDto.setContactNumber("1234567890");
 
-        LoginUserDto login = new LoginUserDto();
-        login.setName("username");
-        login.setPassword("password");
+    User existingUser = new User();
+    existingUser.setContactNumber("1234567890");
 
-        UseruserDto result = userService.login(login);
+    when(userRepo.findAll()).thenReturn(Collections.singletonList(existingUser)); // Existing user
 
-        assertNotNull(result);
-        assertEquals("username", result.getName());
-    }
+    // Act
+    userService.addUser(userDto); // This should throw exception
+}
+@Test
+public void testDeleteUser_Success() throws UserException {
+    // Arrange
+    String userId = "user1";
+    User user = new User();
+    user.setUserId(userId);
 
-    @Test
-    void testGetAllAttendees_Success() throws AttendeeException {
-        Ticket ticket = new Ticket();
-        ticket.setTicketId("T123");
+    when(userRepo.findById(userId)).thenReturn(Optional.of(user));
 
-        Feedback feedback = new Feedback();
-        feedback.setFeedbackId("F123");
+    // Act
+    String result = userService.deleteUser(userId);
 
-        Attendee attendee = new Attendee();
-        attendee.setUserId("attendee123");
-        attendee.setTickets(List.of(ticket));
-        attendee.setFeedbacks(List.of(feedback));
+    // Assert
+    assertEquals("Deleted the user with userid : user1", result);
+}
 
-        when(attendeeRepo.findAll()).thenReturn(List.of(attendee));
+@Test(expected = UserException.class)
+public void testDeleteUser_UserNotFound() throws UserException {
+    // Arrange
+    String userId = "user1";
 
-        List<AttendeeUserDto> attendees = attendeeService.getAllAttendees();
+    when(userRepo.findById(userId)).thenReturn(Optional.empty()); // No user found
 
-        assertNotNull(attendees);
-        assertEquals(1, attendees.size());
-    }
+    // Act
+    userService.deleteUser(userId); // This should throw exception
+}
+@Test
+public void testLogin_Success() throws UserException {
+    // Arrange
+    LoginUserDto loginUserDto = new LoginUserDto();
+    loginUserDto.setName("john.doe");
+    loginUserDto.setPassword("password123");
+
+    User existingUser = new User();
+    existingUser.setName("john.doe");
+    existingUser.setPassword("password123");
+
+    when(userRepo.findAll()).thenReturn(Collections.singletonList(existingUser));
+
+    // Act
+    UseruserDto result = userService.login(loginUserDto);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(existingUser.getName(), result.getName());
+}
+
+@Test(expected = UserException.class)
+public void testLogin_Failure_InvalidCredentials() throws UserException {
+    // Arrange
+    LoginUserDto loginUserDto = new LoginUserDto();
+    loginUserDto.setName("john.doe");
+    loginUserDto.setPassword("wrongpassword");
+
+    User existingUser = new User();
+    existingUser.setName("john.doe");
+    existingUser.setPassword("password123");
+
+    when(userRepo.findAll()).thenReturn(Collections.singletonList(existingUser));
+
+    // Act
+    userService.login(loginUserDto); // This should throw exception
+}
+
 
 
 
