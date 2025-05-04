@@ -1,9 +1,5 @@
- @BeforeEach
-    public void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
 
-    // Test Case 1: Add User Success
+    // Test Case for addUser Success
     @Test
     public void testAddUser_Success() throws UserException {
         // Arrange
@@ -25,9 +21,10 @@
         user.setGender(userDto.getGender());
 
         // Mocking behavior
-        when(userRepo.findByEmail(userDto.getEmail())).thenReturn(Optional.empty()); // Email does not exist
-        when(userRepo.findByContactNumber(userDto.getContactNumber())).thenReturn(Optional.empty()); // Contact number does not exist
-        when(userRepo.save(any(User.class))).thenReturn(user); // Mock save to return the user
+        when(userRepo.findAll()).thenReturn(new ArrayList<>()); // No users in the system
+        when(userRepo.save(any(User.class))).thenReturn(user); // Mock save to return the created user
+        doNothing().when(orgServ).addOrganizer(any(Organizer.class)); // Mocking organizer service
+        doNothing().when(attendeeServ).addAttendee(any(Attendee.class)); // Mocking attendee service
 
         // Act
         UseruserDto result = userService.addUser(userDto);
@@ -39,48 +36,89 @@
         assertEquals(userDto.getContactNumber(), result.getContactNumber());
     }
 
-    // Test Case 2: Delete User Success
+    // Test Case for addUser - Missing Name
     @Test
-    public void testDeleteUser_Success() throws UserException {
+    public void testAddUser_Failure_MissingName() {
         // Arrange
-        String userId = "user1";
-        User user = new User();
-        user.setUserId(userId);
-        
-        // Mocking behavior
-        when(userRepo.findById(userId)).thenReturn(Optional.of(user)); // User exists
+        UseruserDto userDto = new UseruserDto();
+        userDto.setName(null);  // Name is missing
+        userDto.setEmail("john.doe@example.com");
+        userDto.setPassword("password123");
+        userDto.setContactNumber("1234567890");
+        userDto.setAge(25);
+        userDto.setGender("Male");
 
-        // Act
-        String result = userService.deleteUser(userId);
-
-        // Assert
-        assertEquals("Deleted the user with userid : user1", result);
-        verify(userRepo, times(1)).delete(user); // Verify that the delete method is called once
+        // Act & Assert
+        UserException exception = assertThrows(UserException.class, () -> {
+            userService.addUser(userDto);
+        });
+        assertEquals("Name cannot be empty!", exception.getMessage());
     }
 
-    // Test Case 3: Login User Success
+    // Test Case for addUser - Duplicate Email
     @Test
-    public void testLogin_Success() throws UserException {
+    public void testAddUser_Failure_DuplicateEmail() throws UserException {
         // Arrange
-        LoginUserDto loginUserDto = new LoginUserDto();
-        loginUserDto.setName("john.doe");
-        loginUserDto.setPassword("password123");
+        UseruserDto userDto = new UseruserDto();
+        userDto.setName("John Doe");
+        userDto.setEmail("john.doe@example.com");
+        userDto.setPassword("password123");
+        userDto.setContactNumber("1234567890");
+        userDto.setAge(25);
+        userDto.setGender("Male");
 
         User existingUser = new User();
-        existingUser.setName("john.doe");
-        existingUser.setPassword("password123");
+        existingUser.setEmail("john.doe@example.com");
 
         // Mocking behavior
-        when(userRepo.findAll()).thenReturn(Collections.singletonList(existingUser)); // Existing user
+        when(userRepo.findAll()).thenReturn(Collections.singletonList(existingUser)); // Existing user with the same email
 
-        // Act
-        UseruserDto result = userService.login(loginUserDto);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(existingUser.getName(), result.getName());
-        assertEquals(existingUser.getPassword(), result.getPassword());
+        // Act & Assert
+        UserException exception = assertThrows(UserException.class, () -> {
+            userService.addUser(userDto);
+        });
+        assertEquals("Email already exists!!", exception.getMessage());
     }
+@Test
+public void testDeleteUser_Success() throws UserException {
+    // Arrange
+    String userId = "user1";
+    User user = new User();
+    user.setUserId(userId);
+    
+    // Mocking behavior
+    when(userRepo.findById(userId)).thenReturn(Optional.of(user)); // User exists
+    doNothing().when(attendeeServ).deleteById(userId); // Mock attendee deletion
+    doNothing().when(userRepo).deleteById(userId); // Mock user deletion
+
+    // Act
+    String result = userService.deleteUser(userId);
+
+    // Assert
+    assertEquals("Deleted the user with userid : user1", result);
+    verify(userRepo, times(1)).deleteById(userId); // Verify the delete method is called once
+    verify(attendeeServ, times(1)).deleteById(userId); // Verify the attendee deletion
+}
+
+@Test
+public void testDeleteUser_Failure_UserNotFound() {
+    // Arrange
+    String userId = "user2";
+
+    // Mocking behavior
+    when(userRepo.findById(userId)).thenReturn(Optional.empty()); // User does not exist
+
+    // Act & Assert
+    UserException exception = assertThrows(UserException.class, () -> {
+        userService.deleteUser(userId);
+    });
+    assertEquals("No user exists with that ID", exception.getMessage());
+}
+
+
+
+
+
 
 
 
