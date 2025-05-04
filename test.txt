@@ -1,3 +1,116 @@
+@Test
+    void testDeleteUser_Success() throws UserException {
+        User user = new User();
+        user.setUserId("1");
+        user.setName("John Doe");
+
+        when(userRepo.findById("1")).thenReturn(Optional.of(user));
+        doNothing().when(userRepo).deleteById("1");
+
+        String result = userService.deleteUser("1");
+
+        assertNotNull(result);
+        assertEquals("Deleted the user with userid : " + user.getUserId(), result);
+        verify(userRepo, times(1)).deleteById("1");
+    }
+
+    @Test
+    public void testAddUser() {
+        UseruserDto userDto = UseruserDto.builder()
+                .age(25)
+                .contactNumber("9876543210")
+                .email("test@example.com")
+                .gender("Male")
+                .name("Test User")
+                .password("password")
+                .build();
+
+        Attendee attendee = new Attendee();
+        attendee.setUser(new User());
+
+        when(attendeeRepo.save(any(Attendee.class))).thenReturn(attendee);
+        
+        UseruserDto result = userService.addUser(userDto);
+        assertNotNull(result);
+    }
+
+    @Test
+    void testLogin_Success() throws UserException {
+        User user = new User();
+        user.setUserId("1");
+        user.setName("username");
+        user.setPassword("password");
+
+        when(userRepo.findAll()).thenReturn(List.of(user));
+
+        LoginUserDto login = new LoginUserDto();
+        login.setName("username");
+        login.setPassword("password");
+
+        UseruserDto result = userService.login(login);
+
+        assertNotNull(result);
+        assertEquals("username", result.getName());
+    }
+
+    @Test
+    void testGetAllAttendees_Success() throws AttendeeException {
+        Ticket ticket = new Ticket();
+        ticket.setTicketId("T123");
+
+        Feedback feedback = new Feedback();
+        feedback.setFeedbackId("F123");
+
+        Attendee attendee = new Attendee();
+        attendee.setUserId("attendee123");
+        attendee.setTickets(List.of(ticket));
+        attendee.setFeedbacks(List.of(feedback));
+
+        when(attendeeRepo.findAll()).thenReturn(List.of(attendee));
+
+        List<AttendeeUserDto> attendees = attendeeService.getAllAttendees();
+
+        assertNotNull(attendees);
+        assertEquals(1, attendees.size());
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 package com.cts;
 
 import org.junit.jupiter.api.*;
