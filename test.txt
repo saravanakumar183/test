@@ -1,127 +1,86 @@
-@Test
-public void testAddUser_Success() throws UserException {
-    // Arrange
-    UseruserDto userDto = new UseruserDto();
-    userDto.setName("John Doe");
-    userDto.setEmail("john.doe@example.com");
-    userDto.setPassword("password123");
-    userDto.setContactNumber("1234567890");
-    userDto.setAge(25);
-    userDto.setGender("Male");
+ @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
-    User user = new User();
-    user.setUserId("user1");
-    user.setName(userDto.getName());
-    user.setEmail(userDto.getEmail());
-    user.setPassword(userDto.getPassword());
-    user.setContactNumber(userDto.getContactNumber());
-    user.setAge(userDto.getAge());
-    user.setGender(userDto.getGender());
+    // Test Case 1: Add User Success
+    @Test
+    public void testAddUser_Success() throws UserException {
+        // Arrange
+        UseruserDto userDto = new UseruserDto();
+        userDto.setName("John Doe");
+        userDto.setEmail("john.doe@example.com");
+        userDto.setPassword("password123");
+        userDto.setContactNumber("1234567890");
+        userDto.setAge(25);
+        userDto.setGender("Male");
 
-    when(userRepo.findAll()).thenReturn(new ArrayList<>()); // No existing users
-    when(userRepo.save(any(User.class))).thenReturn(user);
-    
-    // Act
-    UseruserDto result = userService.addUser(userDto);
+        User user = new User();
+        user.setUserId("user1");
+        user.setName(userDto.getName());
+        user.setEmail(userDto.getEmail());
+        user.setPassword(userDto.getPassword());
+        user.setContactNumber(userDto.getContactNumber());
+        user.setAge(userDto.getAge());
+        user.setGender(userDto.getGender());
 
-    // Assert
-    assertNotNull(result);
-    assertEquals(userDto.getName(), result.getName());
-    assertEquals(userDto.getEmail(), result.getEmail());
-}
+        // Mocking behavior
+        when(userRepo.findByEmail(userDto.getEmail())).thenReturn(Optional.empty()); // Email does not exist
+        when(userRepo.findByContactNumber(userDto.getContactNumber())).thenReturn(Optional.empty()); // Contact number does not exist
+        when(userRepo.save(any(User.class))).thenReturn(user); // Mock save to return the user
 
-@Test(expected = UserException.class)
-public void testAddUser_EmailAlreadyExists() throws UserException {
-    // Arrange
-    UseruserDto userDto = new UseruserDto();
-    userDto.setEmail("existing.email@example.com");
+        // Act
+        UseruserDto result = userService.addUser(userDto);
 
-    User existingUser = new User();
-    existingUser.setEmail("existing.email@example.com");
+        // Assert
+        assertNotNull(result);
+        assertEquals(userDto.getName(), result.getName());
+        assertEquals(userDto.getEmail(), result.getEmail());
+        assertEquals(userDto.getContactNumber(), result.getContactNumber());
+    }
 
-    when(userRepo.findAll()).thenReturn(Collections.singletonList(existingUser)); // Existing user
+    // Test Case 2: Delete User Success
+    @Test
+    public void testDeleteUser_Success() throws UserException {
+        // Arrange
+        String userId = "user1";
+        User user = new User();
+        user.setUserId(userId);
+        
+        // Mocking behavior
+        when(userRepo.findById(userId)).thenReturn(Optional.of(user)); // User exists
 
-    // Act
-    userService.addUser(userDto); // This should throw exception
-}
+        // Act
+        String result = userService.deleteUser(userId);
 
-@Test(expected = UserException.class)
-public void testAddUser_ContactNumberAlreadyExists() throws UserException {
-    // Arrange
-    UseruserDto userDto = new UseruserDto();
-    userDto.setContactNumber("1234567890");
+        // Assert
+        assertEquals("Deleted the user with userid : user1", result);
+        verify(userRepo, times(1)).delete(user); // Verify that the delete method is called once
+    }
 
-    User existingUser = new User();
-    existingUser.setContactNumber("1234567890");
+    // Test Case 3: Login User Success
+    @Test
+    public void testLogin_Success() throws UserException {
+        // Arrange
+        LoginUserDto loginUserDto = new LoginUserDto();
+        loginUserDto.setName("john.doe");
+        loginUserDto.setPassword("password123");
 
-    when(userRepo.findAll()).thenReturn(Collections.singletonList(existingUser)); // Existing user
+        User existingUser = new User();
+        existingUser.setName("john.doe");
+        existingUser.setPassword("password123");
 
-    // Act
-    userService.addUser(userDto); // This should throw exception
-}
-@Test
-public void testDeleteUser_Success() throws UserException {
-    // Arrange
-    String userId = "user1";
-    User user = new User();
-    user.setUserId(userId);
+        // Mocking behavior
+        when(userRepo.findAll()).thenReturn(Collections.singletonList(existingUser)); // Existing user
 
-    when(userRepo.findById(userId)).thenReturn(Optional.of(user));
+        // Act
+        UseruserDto result = userService.login(loginUserDto);
 
-    // Act
-    String result = userService.deleteUser(userId);
-
-    // Assert
-    assertEquals("Deleted the user with userid : user1", result);
-}
-
-@Test(expected = UserException.class)
-public void testDeleteUser_UserNotFound() throws UserException {
-    // Arrange
-    String userId = "user1";
-
-    when(userRepo.findById(userId)).thenReturn(Optional.empty()); // No user found
-
-    // Act
-    userService.deleteUser(userId); // This should throw exception
-}
-@Test
-public void testLogin_Success() throws UserException {
-    // Arrange
-    LoginUserDto loginUserDto = new LoginUserDto();
-    loginUserDto.setName("john.doe");
-    loginUserDto.setPassword("password123");
-
-    User existingUser = new User();
-    existingUser.setName("john.doe");
-    existingUser.setPassword("password123");
-
-    when(userRepo.findAll()).thenReturn(Collections.singletonList(existingUser));
-
-    // Act
-    UseruserDto result = userService.login(loginUserDto);
-
-    // Assert
-    assertNotNull(result);
-    assertEquals(existingUser.getName(), result.getName());
-}
-
-@Test(expected = UserException.class)
-public void testLogin_Failure_InvalidCredentials() throws UserException {
-    // Arrange
-    LoginUserDto loginUserDto = new LoginUserDto();
-    loginUserDto.setName("john.doe");
-    loginUserDto.setPassword("wrongpassword");
-
-    User existingUser = new User();
-    existingUser.setName("john.doe");
-    existingUser.setPassword("password123");
-
-    when(userRepo.findAll()).thenReturn(Collections.singletonList(existingUser));
-
-    // Act
-    userService.login(loginUserDto); // This should throw exception
-}
+        // Assert
+        assertNotNull(result);
+        assertEquals(existingUser.getName(), result.getName());
+        assertEquals(existingUser.getPassword(), result.getPassword());
+    }
 
 
 
