@@ -1,3 +1,81 @@
+/* Body and layout */
+body, html {
+  height: 100%;
+  margin: 0;
+}
+
+.row {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-image: url('src/assets/bk.jpg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  animation: change 10s infinite ease-in-out;
+}
+
+/* Form Container */
+.form-container {
+  width: 550px;
+  height: 650px;
+  font-size: large;
+  font-family: Arial, sans-serif;
+}
+
+/* Heading colors */
+.highlight-yellow {
+  color: #d7d00c;
+}
+
+.highlight-green {
+  color: #28a745;
+}
+
+.mb-4 {
+  font-family: Impact, fantasy;
+}
+
+/* Form styling */
+.form-group label {
+  font-size: 1rem;
+}
+
+.alert {
+  font-size: 0.875rem;
+  padding: 0.5rem;
+}
+
+.btn-primary {
+  background-color: rgb(55, 125, 34);
+  border: none;
+}
+
+/* Image Row Layout */
+.image-row img {
+  border-radius: 10px;
+  transition: transform 0.3s ease;
+}
+
+/* Image sizing */
+.img-small {
+  width: 30%;
+  height: auto;
+}
+
+.img-large {
+  width: 40%;
+  height: auto;
+}
+
+/* Hover effect */
+.image-row img:hover {
+  transform: scale(1.05);
+}
+
+
+
+
+
 <div class="container-fluid">
   <div class="row vh-100">
 
